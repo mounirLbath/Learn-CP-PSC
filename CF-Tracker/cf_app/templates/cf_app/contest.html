@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CF Tracker — Contest</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #f7f7f5;
+      --surface: #ffffff;
+      --border:  #e2e2de;
+      --text:    #1a1a18;
+      --muted:   #888882;
+      --accent:  #1a6ef5;
+      --ok-bg:   #f0f7ee; --ok-fg: #2d6a24; --ok-border: #c3e0bc;
+      --error-bg: #fdf2f2; --error-fg: #c0392b; --error-border: #f0c4c4;
+      --rec-bg:  #fffbf0; --rec-border: #e8d8a0;
+      --mono: 'IBM Plex Mono', monospace;
+      --sans: 'IBM Plex Sans', sans-serif;
+      --radius: 6px;
+    }
+
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: var(--sans); font-size: 14px;
+      line-height: 1.6; min-height: 100vh;
+    }
+
+    /* ── Topbar ── */
+    .topbar {
+      border-bottom: 1px solid var(--border); background: var(--surface);
+      height: 52px; padding: 0 32px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .topbar-brand { font-family: var(--mono); font-size: 13px; font-weight: 500; }
+    .topbar-brand span { color: var(--accent); }
+    .topbar-right { display: flex; align-items: center; gap: 20px; }
+    .topbar-handle { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+    .topbar-handle strong { color: var(--text); }
+    .btn-link {
+      background: none; border: none; font-family: var(--sans); font-size: 13px;
+      color: var(--muted); cursor: pointer; padding: 0;
+      text-decoration: underline; text-underline-offset: 2px;
+    }
+    .btn-link:hover { color: var(--text); }
+
+    /* ── Layout ── */
+    .container { max-width: 760px; margin: 40px auto; padding: 0 24px; }
+
+    .page-header { margin-bottom: 24px; }
+    .page-title  { font-size: 18px; font-weight: 500; }
+    .page-sub    { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Panel ── */
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 20px; }
+    .panel-body { padding: 20px 24px; }
+
+    /* ── Form ── */
+    .input-row { display: flex; gap: 8px; }
+
+    input[type="text"] {
+      flex: 1; background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 9px 12px; color: var(--text);
+      font-family: var(--mono); font-size: 13px; outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,110,245,0.08); }
+    input[type="text"]::placeholder { color: var(--muted); }
+
+    .btn {
+      display: inline-flex; align-items: center;
+      padding: 9px 18px; border-radius: var(--radius);
+      font-family: var(--sans); font-size: 13px; font-weight: 500;
+      cursor: pointer; border: 1px solid transparent;
+      transition: background 0.15s; white-space: nowrap;
+    }
+    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-primary:hover { background: #155de0; }
+
+    /* ── Alert ── */
+    .alert {
+      font-size: 13px; padding: 10px 14px; border-radius: var(--radius);
+      margin-bottom: 16px; border: 1px solid transparent;
+    }
+    .alert.error { background: var(--error-bg); color: var(--error-fg); border-color: var(--error-border); }
+
+    /* ── Recommendation banner ── */
+    .rec-banner {
+      background: var(--rec-bg);
+      border: 1px solid var(--rec-border);
+      border-radius: var(--radius);
+      padding: 18px 24px;
+      margin-bottom: 20px;
+      animation: fadeIn 0.25s ease both;
+    }
+
+    .rec-banner-label {
+      font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #a07e30; margin-bottom: 8px;
+    }
+
+    .rec-banner-problem {
+      font-family: var(--mono); font-size: 18px; font-weight: 500;
+    }
+
+    .rec-banner-meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+    .rec-banner-link {
+      display: inline-block; margin-top: 10px;
+      font-size: 12px; font-weight: 500; color: var(--accent); text-decoration: none;
+    }
+    .rec-banner-link:hover { text-decoration: underline; }
+
+    /* ── Problem table ── */
+    .section-label {
+      font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { border-bottom: 1px solid var(--border); background: #fafaf8; }
+    th {
+      padding: 10px 16px; text-align: left; font-size: 11px; font-weight: 500;
+      letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
+    }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #fafaf8; }
+    tbody tr.highlighted { background: var(--rec-bg); }
+    td { padding: 12px 16px; vertical-align: middle; }
+
+    .prob-index { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--accent); }
+    .prob-name  { font-size: 13px; }
+    .prob-rating { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
+    .tag-chip {
+      display: inline-block; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 3px; padding: 1px 6px; font-size: 10px; color: var(--muted);
+      margin: 2px 2px 0 0;
+    }
+
+    .rec-marker {
+      display: inline-block; background: #e8d8a0; color: #7a5f10;
+      border-radius: 3px; padding: 1px 7px; font-size: 10px; font-weight: 600;
+      margin-left: 8px; vertical-align: middle;
+    }
+
+    .prob-link { text-decoration: none; color: inherit; }
+    .prob-link:hover .prob-name { color: var(--accent); }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-brand">CF<span>Tracker</span></div>
+    <div class="topbar-right">
+      <div class="topbar-handle">Signed in as <strong>{{ handle }}</strong></div>
+      <a href="{% url 'cf_app:index' %}" class="btn-link" style="text-decoration:none;color:var(--muted);">Dashboard</a>
+      <a href="{% url 'cf_app:submissions' %}" class="btn-link" style="text-decoration:none;color:var(--muted);">Submissions</a>
+      <a href="{% url 'cf_app:ml_recommend' %}" class="btn-link" style="text-decoration:none;color:var(--muted);">ML Recommend</a>
+      <form method="POST" action="{% url 'cf_app:logout' %}" style="display:inline">
+        {% csrf_token %}
+        <button type="submit" class="btn-link">Sign out</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <div class="page-header">
+      <div class="page-title">Contest planner</div>
+      <div class="page-sub">Enter a contest ID to load its problems and get a starting recommendation.</div>
+    </div>
+
+    <!-- Input form -->
+    <div class="panel">
+      <div class="panel-body">
+        {% if error %}
+          <div class="alert error">{{ error }}</div>
+        {% endif %}
+        <form method="POST" action="{% url 'cf_app:contest' %}" onsubmit="showLoading()">
+          {% csrf_token %}
+          <div class="input-row">
+            <input type="text" name="contest_id" placeholder="Contest ID  (e.g. 1234)"
+                   value="{{ contest_id }}" required autocomplete="off" autofocus/>
+            <button type="submit" class="btn btn-primary" id="load-btn">Load contest</button>
+          </div>
+        </form>
+        <div id="loading-msg" style="display:none;margin-top:12px;font-size:13px;color:var(--muted);">
+          Fetching submissions and rating data — this may take 10–30 seconds for large contests…
+        </div>
+      </div>
+    </div>
+
+    {% if problems %}
+
+      <!-- Recommendation banner -->
+      {% if recommended %}
+      <div class="rec-banner">
+        <div class="rec-banner-label">Recommended starting problem</div>
+        <div class="rec-banner-problem">
+          {{ recommended.index }}. {{ recommended.name }}
+        </div>
+        <div class="rec-banner-meta">
+          {% if recommended.rating %}Rating: {{ recommended.rating }}{% else %}Rating: unrated{% endif %}
+        </div>
+        <a class="rec-banner-link"
+           href="https://codeforces.com/contest/{{ contest_id }}/problem/{{ recommended.index }}"
+           target="_blank">
+          Open on Codeforces →
+        </a>
+      </div>
+      {% endif %}
+
+      <!-- Problem list -->
+      <div class="section-label">All problems — Contest #{{ contest_id }}</div>
+      <div class="panel">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Problem</th>
+              <th>Rating</th>
+              <th>Attempts</th>
+              <th>Median elo (solved)</th>
+              <th>Median elo (failed)</th>
+              <th>Tags</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in problems %}
+            <tr {% if recommended and p.index == recommended.index %}class="highlighted"{% endif %}>
+              <td>
+                <span class="prob-index">{{ p.index }}</span>
+                {% if recommended and p.index == recommended.index %}
+                  <span class="rec-marker">start here</span>
+                {% endif %}
+              </td>
+              <td>
+                <a class="prob-link"
+                   href="https://codeforces.com/contest/{{ contest_id }}/problem/{{ p.index }}"
+                   target="_blank">
+                  <span class="prob-name">{{ p.name }}</span>
+                </a>
+              </td>
+              <td class="prob-rating">{{ p.rating|default:"—" }}</td>
+              <td class="prob-rating">{% if p.attempts %}{{ p.attempts }} ({{ p.solve_count }} AC){% else %}—{% endif %}</td>
+              <td class="prob-rating">{{ p.solvers_median|default:"—" }}</td>
+              <td class="prob-rating">{{ p.failers_median|default:"—" }}</td>
+              <td>
+                {% for tag in p.tags %}
+                  <span class="tag-chip">{{ tag }}</span>
+                {% endfor %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    {% endif %}
+
+  </div>
+
+  <script>
+    function showLoading() {
+      document.getElementById('loading-msg').style.display = 'block';
+      document.getElementById('load-btn').disabled = true;
+      document.getElementById('load-btn').textContent = 'Loading…';
+    }
+  </script>
+</body>
+</html>

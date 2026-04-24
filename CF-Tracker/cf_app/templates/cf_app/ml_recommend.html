@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CF Tracker — ML Recommender</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:      #f7f7f5;
+      --surface: #ffffff;
+      --border:  #e2e2de;
+      --text:    #1a1a18;
+      --muted:   #888882;
+      --accent:  #1a6ef5;
+      --ok-bg:   #f0f7ee; --ok-fg: #2d6a24; --ok-border: #c3e0bc;
+      --warn-bg: #fffbf0; --warn-fg: #92681a; --warn-border: #e8d8a0;
+      --error-bg: #fdf2f2; --error-fg: #c0392b; --error-border: #f0c4c4;
+      --mono: 'IBM Plex Mono', monospace;
+      --sans: 'IBM Plex Sans', sans-serif;
+      --radius: 6px;
+    }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.6; min-height: 100vh; }
+
+    /* Topbar */
+    .topbar { border-bottom: 1px solid var(--border); background: var(--surface); height: 52px; padding: 0 32px; display: flex; align-items: center; justify-content: space-between; }
+    .topbar-brand { font-family: var(--mono); font-size: 13px; font-weight: 500; }
+    .topbar-brand span { color: var(--accent); }
+    .topbar-right { display: flex; align-items: center; gap: 20px; }
+    .topbar-handle { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+    .topbar-handle strong { color: var(--text); }
+    .btn-link { background: none; border: none; font-family: var(--sans); font-size: 13px; color: var(--muted); cursor: pointer; padding: 0; text-decoration: underline; text-underline-offset: 2px; }
+    .btn-link:hover { color: var(--text); }
+
+    /* Layout */
+    .container { max-width: 1100px; margin: 40px auto; padding: 0 24px; }
+    .page-header { margin-bottom: 28px; }
+    .page-title { font-size: 18px; font-weight: 500; }
+    .page-sub   { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+    /* Error */
+    .alert-error { background: var(--error-bg); color: var(--error-fg); border: 1px solid var(--error-border); border-radius: var(--radius); padding: 14px 18px; font-size: 13px; margin-bottom: 24px; }
+
+    /* Tag preferences */
+    .pref-section { margin-bottom: 32px; }
+    .section-label { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+    .pref-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pref-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 4px; font-size: 12px;
+      font-family: var(--mono); border: 1px solid var(--border);
+    }
+    .pref-chip.positive { background: var(--ok-bg);   color: var(--ok-fg);   border-color: var(--ok-border); }
+    .pref-chip.negative { background: var(--error-bg); color: var(--error-fg); border-color: var(--error-border); }
+    .pref-chip.neutral  { background: var(--bg);       color: var(--muted); }
+
+    /* Model tabs */
+    .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+    .tab-btn {
+      padding: 10px 20px; font-family: var(--sans); font-size: 13px; font-weight: 500;
+      color: var(--muted); background: none; border: none; border-bottom: 2px solid transparent;
+      cursor: pointer; transition: color 0.15s, border-color 0.15s; margin-bottom: -1px;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* Tab panels */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Candidate table */
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { border-bottom: 1px solid var(--border); background: #fafaf8; }
+    th { padding: 10px 16px; text-align: left; font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #fafaf8; }
+    tbody tr.in-target { background: var(--ok-bg); }
+    td { padding: 12px 16px; vertical-align: middle; }
+
+    .rank-num { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+    .prob-link { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--accent); text-decoration: none; }
+    .prob-link:hover { text-decoration: underline; }
+    .prob-elo { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
+    .tag-chip { display: inline-block; background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 1px 6px; font-size: 10px; color: var(--muted); margin: 2px 2px 0 0; }
+
+    /* Probability bar */
+    .prob-cell { display: flex; align-items: center; gap: 10px; min-width: 140px; }
+    .prob-bar-wrap { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .prob-bar-fill { height: 100%; border-radius: 3px; background: var(--accent); transition: width 0.4s ease; }
+    .prob-bar-fill.in-target { background: var(--ok-fg); }
+    .prob-val { font-family: var(--mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+    .badge-target { display: inline-block; background: var(--ok-bg); color: var(--ok-fg); border: 1px solid var(--ok-border); border-radius: 3px; padding: 1px 7px; font-size: 10px; font-weight: 600; }
+    .empty { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
+
+    /* Loading indicator shown while page computes */
+    .loading-bar { height: 3px; background: linear-gradient(90deg, var(--accent) 0%, transparent 100%); animation: loadslide 1.5s ease infinite; }
+    @keyframes loadslide { 0%{width:0%} 100%{width:100%} }
+
+    @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+    .container { animation: fadeIn 0.3s ease both; }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="topbar-brand">CF<span>Tracker</span></div>
+    <div class="topbar-right">
+      <div class="topbar-handle">Signed in as <strong>{{ handle }}</strong></div>
+      <a href="{% url 'cf_app:index' %}"       class="btn-link" style="text-decoration:none;color:var(--muted);">Dashboard</a>
+      <a href="{% url 'cf_app:submissions' %}"  class="btn-link" style="text-decoration:none;color:var(--muted);">Submissions</a>
+      
+      <form method="POST" action="{% url 'cf_app:logout' %}" style="display:inline">
+        {% csrf_token %}
+        <button type="submit" class="btn-link">Sign out</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <div class="page-header">
+      <div class="page-title">ML Recommender</div>
+      <div class="page-sub">
+        Problems ranked by predicted solve probability · target window 50–65% ·
+        trained on {{ submission_count }} of your submissions + community data
+      </div>
+    </div>
+
+    {% if error %}
+      <div class="alert-error">{{ error }}</div>
+
+    {% else %}
+
+      <!-- Tag preferences (LASSO) -->
+      {% if tag_prefs %}
+      <div class="pref-section">
+        <div class="section-label">Your tag strengths &amp; weaknesses (LASSO)</div>
+        <div class="pref-grid">
+          {% for tag, weight in tag_prefs.items %}
+            {% if weight > 0 %}
+              <span class="pref-chip positive">{{ tag }} +{{ weight }}</span>
+            {% elif weight < 0 %}
+              <span class="pref-chip negative">{{ tag }} {{ weight }}</span>
+            {% else %}
+              <span class="pref-chip neutral">{{ tag }} 0</span>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Model tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('ensemble', this)">Ensemble</button>
+        <button class="tab-btn"        onclick="switchTab('sgd',      this)">SGD</button>
+        <button class="tab-btn"        onclick="switchTab('knn',      this)">KNN</button>
+        <button class="tab-btn"        onclick="switchTab('lasso',    this)">LASSO</button>
+      </div>
+
+      {% for model_name, candidates in models %}
+      <div class="tab-panel {% if model_name == 'ensemble' %}active{% endif %}" id="tab-{{ model_name }}">
+        <div class="panel">
+          {% if candidates %}
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Problem</th>
+                <th>Rating</th>
+                <th>Tags</th>
+                <th>Solve probability</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in candidates %}
+              <tr {% if c.in_target %}class="in-target"{% endif %}>
+                <td class="rank-num">{{ forloop.counter }}</td>
+                <td>
+                  {% if c.contest_id %}
+                    <a class="prob-link"
+                       href="https://codeforces.com/problemset/problem/{{ c.contest_id }}/{{ c.problem_index }}"
+                       target="_blank">{{ c.problem }}</a>
+                  {% else %}
+                    <span class="prob-link" style="color:var(--text);">{{ c.problem }}</span>
+                  {% endif %}
+                </td>
+                <td class="prob-elo">{{ c.problem_elo|default:"—" }}</td>
+                <td>
+                  {% for tag in c.tags %}
+                    <span class="tag-chip">{{ tag }}</span>
+                  {% endfor %}
+                </td>
+                <td>
+                  <div class="prob-cell">
+                    
+                    <span class="prob-val">{{ c.solve_prob_display }}</span>
+                    {% if c.in_target %}<span class="badge-target">target</span>{% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+            <div class="empty">No candidates found for this model.</div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+
+    {% endif %}
+  </div>
+
+  <script>
+    function switchTab(name, btn) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + name).classList.add('active');
+      btn.classList.add('active');
+    }
+  </script>
+
+</body>
+</html>

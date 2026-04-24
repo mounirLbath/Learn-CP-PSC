@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CF Tracker — Submissions</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #f7f7f5;
+      --surface: #ffffff;
+      --border:  #e2e2de;
+      --text:    #1a1a18;
+      --muted:   #888882;
+      --accent:  #1a6ef5;
+      --ok-bg:   #f0f7ee; --ok-fg: #2d6a24; --ok-border: #c3e0bc;
+      --fail-bg: #fdf2f2; --fail-fg: #c0392b; --fail-border: #f0c4c4;
+      --mono: 'IBM Plex Mono', monospace;
+      --sans: 'IBM Plex Sans', sans-serif;
+      --radius: 6px;
+    }
+
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: var(--sans); font-size: 14px;
+      line-height: 1.6; min-height: 100vh;
+    }
+
+    /* ── Topbar ── */
+    .topbar {
+      border-bottom: 1px solid var(--border); background: var(--surface);
+      height: 52px; padding: 0 32px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .topbar-brand { font-family: var(--mono); font-size: 13px; font-weight: 500; }
+    .topbar-brand span { color: var(--accent); }
+    .topbar-right { display: flex; align-items: center; gap: 20px; }
+    .topbar-handle { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+    .topbar-handle strong { color: var(--text); }
+    .btn-link {
+      background: none; border: none; font-family: var(--sans); font-size: 13px;
+      color: var(--muted); cursor: pointer; padding: 0;
+      text-decoration: underline; text-underline-offset: 2px;
+    }
+    .btn-link:hover { color: var(--text); }
+
+    /* ── Layout ── */
+    .container { max-width: 960px; margin: 40px auto; padding: 0 24px; }
+
+    .page-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+    }
+
+    .page-title { font-size: 18px; font-weight: 500; }
+    .page-sub   { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Filters ── */
+    .filters {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;
+    }
+
+    .filter-btn {
+      padding: 6px 14px; border-radius: var(--radius);
+      font-family: var(--sans); font-size: 12px; font-weight: 500;
+      cursor: pointer; border: 1px solid var(--border);
+      background: var(--surface); color: var(--muted);
+      text-decoration: none; transition: all 0.15s;
+    }
+
+    .filter-btn:hover { border-color: var(--muted); color: var(--text); }
+    .filter-btn.active { background: var(--text); color: var(--surface); border-color: var(--text); }
+
+    select.filter-select {
+      padding: 6px 12px; border-radius: var(--radius);
+      font-family: var(--sans); font-size: 12px;
+      border: 1px solid var(--border); background: var(--surface);
+      color: var(--text); cursor: pointer; outline: none;
+    }
+
+    /* ── Table ── */
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead tr { border-bottom: 1px solid var(--border); background: #fafaf8; }
+
+    th {
+      padding: 10px 16px; text-align: left;
+      font-size: 11px; font-weight: 500;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--muted); white-space: nowrap;
+    }
+
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #fafaf8; }
+
+    td { padding: 11px 16px; vertical-align: middle; }
+
+    /* ── Verdict badge ── */
+    .badge {
+      display: inline-block; padding: 2px 9px;
+      border-radius: 3px; font-size: 11px; font-weight: 500;
+      border: 1px solid transparent; white-space: nowrap;
+    }
+    .badge-ok   { background: var(--ok-bg);   color: var(--ok-fg);   border-color: var(--ok-border); }
+    .badge-fail { background: var(--fail-bg);  color: var(--fail-fg); border-color: var(--fail-border); }
+
+    /* ── Problem cell ── */
+    .prob-link {
+      font-family: var(--mono); font-size: 12px; font-weight: 500;
+      color: var(--accent); text-decoration: none;
+    }
+    .prob-link:hover { text-decoration: underline; }
+
+    .prob-name { font-size: 13px; color: var(--text); margin-bottom: 2px; }
+
+    .rating-chip {
+      display: inline-block; font-family: var(--mono); font-size: 11px;
+      color: var(--muted); margin-left: 6px;
+    }
+
+    .tag-chip {
+      display: inline-block; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 3px; padding: 1px 6px; font-size: 10px; color: var(--muted);
+      margin: 2px 2px 0 0;
+    }
+
+    .lang-cell { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+    .time-cell { font-family: var(--mono); font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+    /* ── Pagination ── */
+    .pagination {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px; border-top: 1px solid var(--border);
+      font-size: 12px; color: var(--muted); flex-wrap: wrap; gap: 8px;
+    }
+
+    .pagination-links { display: flex; gap: 4px; }
+
+    .page-link {
+      display: inline-block; padding: 5px 10px;
+      border: 1px solid var(--border); border-radius: var(--radius);
+      font-size: 12px; color: var(--muted); text-decoration: none;
+      transition: all 0.15s;
+    }
+    .page-link:hover { border-color: var(--muted); color: var(--text); }
+    .page-link.active { background: var(--text); color: var(--surface); border-color: var(--text); }
+    .page-link.disabled { opacity: 0.35; pointer-events: none; }
+
+    .empty { text-align: center; padding: 48px 24px; color: var(--muted); font-size: 13px; }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="topbar-brand">CF<span>Tracker</span></div>
+    <div class="topbar-right">
+      <div class="topbar-handle">Signed in as <strong>{{ handle }}</strong></div>
+      <a href="{% url 'cf_app:index' %}" class="btn-link" style="text-decoration:none;color:var(--muted);">Dashboard</a>
+      <a href="{% url 'cf_app:contest' %}" class="btn-link" style="text-decoration:none;color:var(--muted);">Contest</a>
+      <a href="{% url 'cf_app:ml_recommend' %}" class="btn-link" style="text-decoration:none;color:var(--muted);">ML Recommend</a>
+      <form method="POST" action="{% url 'cf_app:logout' %}" style="display:inline">
+        {% csrf_token %}
+        <button type="submit" class="btn-link">Sign out</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <div class="page-header">
+      <div>
+        <div class="page-title">Submissions</div>
+        <div class="page-sub">{{ total }} submission{{ total|pluralize }} found</div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+      <a href="?verdict=&tag={{ tag_filter }}"
+         class="filter-btn {% if verdict_filter == '' %}active{% endif %}">All</a>
+      <a href="?verdict=ok&tag={{ tag_filter }}"
+         class="filter-btn {% if verdict_filter == 'ok' %}active{% endif %}">✓ Accepted</a>
+      <a href="?verdict=fail&tag={{ tag_filter }}"
+         class="filter-btn {% if verdict_filter == 'fail' %}active{% endif %}">✕ Failed</a>
+
+      <select class="filter-select" onchange="applyTagFilter(this.value)">
+        <option value="">All tags</option>
+        {% for tag in tracked_tags %}
+          <option value="{{ tag }}" {% if tag_filter == tag %}selected{% endif %}>{{ tag }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="panel">
+      {% if submissions %}
+        <table>
+          <thead>
+            <tr>
+              <th>Result</th>
+              <th>Problem</th>
+              <th>Tags</th>
+              <th>Language</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in submissions %}
+            <tr>
+              <!-- Verdict -->
+              <td>
+                {% if s.verdict == 'OK' %}
+                  <span class="badge badge-ok">Accepted</span>
+                {% else %}
+                  <span class="badge badge-fail">
+                    {% if s.verdict == 'WRONG_ANSWER' %}Wrong Answer
+                    {% elif s.verdict == 'TIME_LIMIT_EXCEEDED' %}TLE
+                    {% elif s.verdict == 'MEMORY_LIMIT_EXCEEDED' %}MLE
+                    {% elif s.verdict == 'RUNTIME_ERROR' %}Runtime Error
+                    {% elif s.verdict == 'COMPILATION_ERROR' %}Compile Error
+                    {% else %}{{ s.verdict|default:"—" }}
+                    {% endif %}
+                  </span>
+                {% endif %}
+              </td>
+
+              <!-- Problem -->
+              <td>
+                <div class="prob-name">
+                  {% if s.contest_id %}
+                    <a class="prob-link"
+                       href="https://codeforces.com/contest/{{ s.contest_id }}/problem/{{ s.problem_index }}"
+                       target="_blank">
+                      {{ s.problem_index }}.
+                    </a>
+                  {% endif %}
+                  {{ s.problem_name }}
+                  {% if s.problem_rating %}
+                    <span class="rating-chip">{{ s.problem_rating }}</span>
+                  {% endif %}
+                </div>
+              </td>
+
+              <!-- Tags -->
+              <td>
+                {% for tag in s.problem_tags %}
+                  <span class="tag-chip">{{ tag }}</span>
+                {% endfor %}
+              </td>
+
+              <!-- Language -->
+              <td class="lang-cell">{{ s.programming_language }}</td>
+
+              <!-- Time -->
+              <td class="time-cell">{{ s.time_consumed_millis }} ms</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <!-- Pagination -->
+        <div class="pagination">
+          <span>Page {{ page }} of {{ total_pages }}</span>
+          <div class="pagination-links">
+            <a href="?page={{ page|add:'-1' }}&verdict={{ verdict_filter }}&tag={{ tag_filter }}"
+               class="page-link {% if page <= 1 %}disabled{% endif %}">← Prev</a>
+            <a href="?page={{ page|add:'1' }}&verdict={{ verdict_filter }}&tag={{ tag_filter }}"
+               class="page-link {% if page >= total_pages %}disabled{% endif %}">Next →</a>
+          </div>
+        </div>
+
+      {% else %}
+        <div class="empty">No submissions found for the selected filters.</div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <script>
+    function applyTagFilter(tag) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tag', tag);
+      url.searchParams.set('page', '1');
+      window.location.href = url.toString();
+    }
+  </script>
+
+</body>
+</html>

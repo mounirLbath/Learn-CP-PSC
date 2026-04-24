@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CF Tracker — Sign in</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #f7f7f5;
+      --surface: #ffffff;
+      --border:  #e2e2de;
+      --text:    #1a1a18;
+      --muted:   #888882;
+      --accent:  #1a6ef5;
+      --error-bg:  #fdf2f2;
+      --error-fg:  #c0392b;
+      --error-border: #f0c4c4;
+      --mono: 'IBM Plex Mono', monospace;
+      --sans: 'IBM Plex Sans', sans-serif;
+      --radius: 6px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 40px 40px 36px;
+      width: 100%;
+      max-width: 380px;
+      animation: fadeUp 0.25s ease both;
+    }
+
+    .brand {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+
+    .brand span { color: var(--accent); }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 500;
+      letter-spacing: -0.3px;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      margin-bottom: 16px;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(26,110,245,0.08);
+    }
+
+    input[type="text"]::placeholder { color: var(--muted); }
+
+    .btn-primary {
+      width: 100%;
+      padding: 10px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-primary:hover { background: #155de0; }
+
+    .alert-error {
+      background: var(--error-bg);
+      color: var(--error-fg);
+      border: 1px solid var(--error-border);
+      border-radius: var(--radius);
+      font-size: 13px;
+      padding: 10px 14px;
+      margin-bottom: 20px;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">CF<span>Tracker</span></div>
+
+    <h1>Welcome</h1>
+    <p class="subtitle">Enter your Codeforces handle to continue. Your submissions will be fetched automatically.</p>
+
+    {% if error %}
+      <div class="alert-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="{% url 'cf_app:login' %}">
+      {% csrf_token %}
+      <label for="handle">Codeforces handle</label>
+      <input type="text" id="handle" name="handle" placeholder="e.g. tourist" required autocomplete="off" autofocus/>
+      <button type="submit" class="btn-primary">Continue →</button>
+    </form>
+  </div>
+</body>
+</html>

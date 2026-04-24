@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CF Tracker — {{ handle }}</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #f7f7f5;
+      --surface: #ffffff;
+      --border:  #e2e2de;
+      --text:    #1a1a18;
+      --muted:   #888882;
+      --accent:  #1a6ef5;
+      --success-bg: #f0f7ee; --success-fg: #2d6a24; --success-border: #c3e0bc;
+      --error-bg:   #fdf2f2; --error-fg:   #c0392b; --error-border:   #f0c4c4;
+      --mono: 'IBM Plex Mono', monospace;
+      --sans: 'IBM Plex Sans', sans-serif;
+      --radius: 6px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── Top bar ── */
+    .topbar {
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      height: 52px;
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .topbar-brand { font-family: var(--mono); font-size: 13px; font-weight: 500; }
+    .topbar-brand span { color: var(--accent); }
+    .topbar-right { display: flex; align-items: center; gap: 20px; }
+    .topbar-handle { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+    .topbar-handle strong { color: var(--text); }
+    .btn-link {
+      background: none; border: none; font-family: var(--sans); font-size: 13px;
+      color: var(--muted); cursor: pointer; padding: 0;
+      text-decoration: underline; text-underline-offset: 2px;
+    }
+    .btn-link:hover { color: var(--text); }
+
+    /* ── Layout ── */
+    .container { max-width: 900px; margin: 40px auto; padding: 0 24px; }
+
+    .section { margin-bottom: 32px; animation: fadeIn 0.25s ease both; }
+    .section + .section { animation-delay: 0.05s; }
+
+    .section-label {
+      font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+    }
+
+    /* ── Panel ── */
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+    .panel-body { padding: 20px 24px; }
+
+    /* ── Alert ── */
+    .alert {
+      font-size: 13px; padding: 10px 14px; border-radius: var(--radius);
+      margin-bottom: 20px; border: 1px solid transparent;
+    }
+    .alert.success { background: var(--success-bg); color: var(--success-fg); border-color: var(--success-border); }
+    .alert.error   { background: var(--error-bg);   color: var(--error-fg);   border-color: var(--error-border); }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border-radius: var(--radius);
+      font-family: var(--sans); font-size: 12px; font-weight: 500;
+      cursor: pointer; border: 1px solid transparent;
+      transition: background 0.15s, border-color 0.15s; white-space: nowrap;
+    }
+    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-primary:hover { background: #155de0; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-ghost { background: transparent; color: var(--muted); border-color: var(--border); }
+    .btn-ghost:hover { border-color: var(--muted); color: var(--text); }
+
+    /* ── Overview stats ── */
+    .overview {
+      display: flex; gap: 32px; align-items: center;
+      justify-content: space-between; flex-wrap: wrap;
+    }
+    .stat-value { font-family: var(--mono); font-size: 22px; font-weight: 500; line-height: 1; }
+    .stat-label { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+    /* ── Tag grid ── */
+    .tag-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 12px;
+    }
+
+    .tag-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: border-color 0.15s;
+    }
+
+    .tag-card:hover { border-color: #c8c8c4; }
+
+    .tag-card-header {
+      padding: 14px 16px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .tag-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.3;
+    }
+
+    .tag-elo {
+      font-family: var(--mono);
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--text);
+      text-align: right;
+      line-height: 1;
+    }
+
+    .tag-elo-label {
+      font-size: 10px;
+      color: var(--muted);
+      text-align: right;
+      margin-top: 2px;
+    }
+
+    .tag-elo.none {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .tag-solved {
+      font-size: 11px;
+      color: var(--muted);
+      padding: 0 16px 10px;
+    }
+
+    /* ── Elo bar ── */
+    .elo-bar-wrap {
+      height: 3px;
+      background: var(--border);
+      margin: 0 16px 12px;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .elo-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: var(--accent);
+      transition: width 0.6s ease;
+    }
+
+    /* ── Tag card footer ── */
+    .tag-card-footer {
+      border-top: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: #fafaf8;
+    }
+
+    /* ── Recommendation result ── */
+    .rec-panel { display: none; border-top: 1px solid var(--border); background: #fafaf8; padding: 14px 16px; }
+    .rec-panel.visible { display: block; animation: fadeIn 0.2s ease both; }
+    .rec-label { font-size: 10px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+    .rec-name { font-family: var(--mono); font-size: 13px; font-weight: 500; }
+    .rec-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
+    .rec-chip {
+      display: inline-block; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 3px; padding: 1px 6px; font-size: 10px; color: var(--muted);
+      margin: 4px 3px 0 0;
+    }
+    .rec-link { display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 500; color: var(--accent); text-decoration: none; }
+    .rec-link:hover { text-decoration: underline; }
+
+    /* ── Global recommender ── */
+    .global-rec-panel { display: none; border-top: 1px solid var(--border); background: #fafaf8; padding: 18px 24px; }
+    .global-rec-panel.visible { display: block; animation: fadeIn 0.2s ease both; }
+
+    /* ── Change handle modal ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.3); z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 28px; width: 100%; max-width: 360px;
+      animation: fadeUp 0.2s ease both;
+    }
+    .modal h2 { font-size: 16px; font-weight: 500; margin-bottom: 6px; }
+    .modal p  { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+    .modal input[type="text"] {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 9px 12px; color: var(--text);
+      font-family: var(--mono); font-size: 13px; outline: none; margin-bottom: 14px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .modal input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,110,245,0.08); }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-brand">CF<span>Tracker</span></div>
+    <div class="topbar-right">
+      <div class="topbar-handle">Signed in as <strong>{{ handle }}</strong></div>
+      <a href="{% url 'cf_app:submissions' %}" class="btn-link" style="text-decoration:none;color:var(--muted);">Submissions</a>
+      
+      <button class="btn-link" onclick="openChangeHandle()">Change handle</button>
+      <a href="{% url 'cf_app:ml_recommend' %}" class="btn-link" style="text-decoration:none;color:var(--muted);">ML Recommend</a>
+      <form method="POST" action="{% url 'cf_app:logout' %}" style="display:inline">
+        {% csrf_token %}
+        <button type="submit" class="btn-link">Sign out</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="container">
+
+    {% if message %}
+      <div class="alert {{ message_type }}">{{ message }}</div>
+    {% endif %}
+
+    <!-- Overview -->
+    <div class="section">
+      <div class="section-label">Overview</div>
+      <div class="panel">
+        <div class="panel-body">
+          <div class="overview">
+            <div>
+              <div class="stat-value">{{ submission_count }}</div>
+              <div class="stat-label">Submissions stored</div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <form method="POST" action="{% url 'cf_app:refresh' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-ghost">Refresh submissions</button>
+              </form>
+              <button class="btn btn-primary" id="global-rec-btn" onclick="getRecommendation(null, 'global-rec-btn', 'global-rec-panel')">
+                Recommend a problem
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Global recommendation result -->
+        <div class="global-rec-panel" id="global-rec-panel">
+          <div class="rec-label">Recommended problem</div>
+          <div class="rec-name" id="global-rec-name"></div>
+          <div class="rec-meta" id="global-rec-meta"></div>
+          <div id="global-rec-tags"></div>
+          <a class="rec-link" id="global-rec-link" href="#" target="_blank">View on Codeforces →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tag breakdown -->
+    <div class="section">
+      <div class="section-label">Performance by tag</div>
+      <div class="tag-grid">
+        {% for t in tag_stats %}
+        <div class="tag-card">
+          <div class="tag-card-header">
+            <div>
+              <div class="tag-name">{{ t.tag }}</div>
+              <div class="tag-solved">{{ t.solved_count }} problem{{ t.solved_count|pluralize }} solved</div>
+            </div>
+            <div>
+              {% if t.elo %}
+                <div class="tag-elo">{{ t.elo }}</div>
+                <div class="tag-elo-label">avg rating</div>
+              {% else %}
+                <div class="tag-elo none">—</div>
+                <div class="tag-elo-label">no data</div>
+              {% endif %}
+            </div>
+          </div>
+
+          {% if t.elo %}
+          <div class="elo-bar-wrap">
+            <!-- Bar fills proportionally: 800 = 0%, 3500 = 100% -->
+            <div class="elo-bar-fill" data-elo="{{ t.elo }}"></div>
+          </div>
+          {% endif %}
+
+          <div class="tag-card-footer">
+            <button class="btn btn-ghost" style="font-size:12px;"
+              onclick="getRecommendation('{{ t.tag }}', 'rec-btn-{{ t.tag_slug }}', 'rec-panel-{{ t.tag_slug }}')"
+              id="rec-btn-{{ t.tag_slug }}">
+              Recommend
+            </button>
+          </div>
+
+          <!-- Per-tag recommendation result -->
+          <div class="rec-panel" id="rec-panel-{{ t.tag_slug }}">
+            <div class="rec-label">Recommended</div>
+            <div class="rec-name" id="rec-name-{{ t.tag_slug }}"></div>
+            <div class="rec-meta" id="rec-meta-{{ t.tag_slug }}"></div>
+            <div id="rec-tags-{{ t.tag_slug }}"></div>
+            <a class="rec-link" id="rec-link-{{ t.tag_slug }}" href="#" target="_blank">View on Codeforces →</a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Change handle modal -->
+  <div class="modal-overlay" id="modal" onclick="handleOverlayClick(event)">
+    <div class="modal">
+      <h2>Change handle</h2>
+      <p>Enter a new Codeforces handle. Your submissions will be re-fetched.</p>
+      <form method="POST" action="{% url 'cf_app:change_handle' %}">
+        {% csrf_token %}
+        <input type="text" name="handle" placeholder="New handle" required autocomplete="off" autofocus/>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" onclick="closeChangeHandle()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Scale elo bars correctly on load (800–3500 range → 0–100%)
+    document.querySelectorAll('.elo-bar-fill').forEach(el => {
+      const elo = parseInt(el.dataset.elo, 10);
+      const pct = Math.min(100, Math.max(0, (elo - 800) / (3500 - 800) * 100));
+      el.style.width = pct + '%';
+    });
+
+    function openChangeHandle()  { document.getElementById('modal').classList.add('open'); }
+    function closeChangeHandle() { document.getElementById('modal').classList.remove('open'); }
+    function handleOverlayClick(e) {
+      if (e.target === document.getElementById('modal')) closeChangeHandle();
+    }
+
+    async function getRecommendation(tag, btnId, panelId) {
+      const btn = document.getElementById(btnId);
+      const originalText = btn.textContent;
+      btn.textContent = 'Loading…';
+      btn.disabled = true;
+
+      const url = tag ? `/recommend/?tags=${encodeURIComponent(tag)}` : '/recommend/';
+
+      try {
+        const res  = await fetch(url);
+        const data = await res.json();
+
+        // Derive suffix for element IDs
+        const suffix = tag ? tag.replace(/ /g, '-') : 'global';
+
+        const panel = document.getElementById(panelId);
+        const name  = document.getElementById((tag ? 'rec-name-' : 'global-rec-') + (tag ? suffix : 'name'));
+        const meta  = document.getElementById((tag ? 'rec-meta-' : 'global-rec-') + (tag ? suffix : 'meta'));
+        const chips = document.getElementById((tag ? 'rec-tags-' : 'global-rec-') + (tag ? suffix : 'tags'));
+        const link  = document.getElementById((tag ? 'rec-link-' : 'global-rec-') + (tag ? suffix : 'link'));
+
+        if (data.error) {
+          name.textContent = data.error;
+          meta.textContent = '';
+          chips.innerHTML  = '';
+          link.style.display = 'none';
+        } else {
+          name.textContent = `${data.problem_index}. ${data.problem_name}`;
+          const parts = [];
+          if (data.contest_id) parts.push(`Contest #${data.contest_id}`);
+          if (data.rating)     parts.push(`Rating: ${data.rating}`);
+          meta.textContent = parts.join('  ·  ');
+          chips.innerHTML = (data.tags || []).map(t => `<span class="rec-chip">${t}</span>`).join('');
+          if (data.contest_id) {
+            link.href = `https://codeforces.com/contest/${data.contest_id}/problem/${data.problem_index}`;
+            link.style.display = 'inline-block';
+          } else {
+            link.style.display = 'none';
+          }
+        }
+
+        panel.classList.add('visible');
+      } catch (e) {
+        alert('Something went wrong.');
+      } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
+    }
+  </script>
+
+</body>
+</html>
