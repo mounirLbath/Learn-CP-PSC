@@ -2,7 +2,7 @@
 
 Experiments for our PSC (collective scientific project) at École Polytechnique, 2025-2026, supervised by Dr. Jill-Jênn Vie (Inria): an assistant to learn competitive programming, which keeps track of what a student knows and recommends what to work on next.
 
-The repository has four independent parts.
+This repository is a cleaned-up version of our working repository, [LearnCP](https://github.com/mounirLbath/LearnCP). It has four independent parts.
 
 ## Knowledge tracing with AKT
 
